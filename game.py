@@ -1,6 +1,7 @@
 import random
 import os
 import pygame
+from tiles import generate
 scale = 16
 WIDTH, HEIGHT = 1200//scale, 600//scale
 
@@ -8,13 +9,10 @@ pygame.init()
 namedTiles = {}
 names = [
     'ud', 'rl', 'rd', 'ur', 'dl', 'ul', 
-    'b', 'w', 'a', 
+    'b', 'a', 
     'urd', 'udl', 'url', 'rdl',
     'r', 'l', 'd', 'u',
 ]
-for i in names:
-    namedTiles[i] = pygame.image.load(f"assets/{i}.png")
-    namedTiles[i] = pygame.transform.scale(namedTiles[i], (scale, scale))
     
 mep = []
 def valid(x, y):
@@ -137,15 +135,25 @@ def refresh():
 
 refresh()
 
-while True:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            exit()
-        
-    screen.fill((0, 0, 0))
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_SPACE]:
-        refresh()
-    doThing()
-    pygame.display.update()
-    clock.tick(60)
+def main():
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                exit()
+            
+        screen.fill((0, 0, 0))
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_SPACE]:
+            refresh()
+        doThing()
+        pygame.display.update()
+        clock.tick(60)
+
+if __name__ == "__main__":
+    if not os.path.exists("assets"):
+        os.makedirs("assets")
+    generate()
+    for i in names:
+        namedTiles[i] = pygame.image.load(f"assets/{i}.png")
+        namedTiles[i] = pygame.transform.scale(namedTiles[i], (scale, scale))
+    main()
