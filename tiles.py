@@ -7,9 +7,9 @@ names = [
     'r', 'l', 'd', 'u',
 ]
 
-tiles = []
 
 def generate():
+    tiles = {}
     for i in names:
         img = Image.new('RGB', (64, 64), (255, 255, 255, 0))
         hLine = Image.new('RGB', (64, 5), (0, 0, 0, 0))
@@ -24,5 +24,7 @@ def generate():
             img.paste(vLine, (59, 0))
         if 'b' in i:
             img.paste(Image.new('RGB', (64, 64), (0, 0, 0, 0)), (0, 0))
-        img.save(f"assets/{i}.png")
-        tiles.append(img)
+        if 'a' in i:
+            img.paste(Image.new('RGB', (64, 64), (255, 255, 255, 0)), (0, 0))
+        tiles[i] = img
+    return tiles
