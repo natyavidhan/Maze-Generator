@@ -7,7 +7,7 @@ class Cell:
     def __init__(self, x, y):
         self.x = x
         self.y = y
-        self.openings = [random.choice([True, False]) for i in range(4)]
+        self.openings = [False, False, False, False]
 
 class Game:
     def __init__(self):
@@ -21,13 +21,15 @@ class Game:
 
         self.res = 20
         self.cells = []
+        self.scene = "walk"
 
         self.tiles = generate()
 
         for i in range(self.height // self.res):
             self.cells.append([])
             for j in range(self.width // self.res):
-                self.cells[i].append(Cell(i, j))
+                self.cells[i].append(Cell(j, i))
+        self.current = self.cells[0][0]
     
     def get_surface(self, texture: Image):
         return pygame.image.fromstring(texture.tobytes(), texture.size, texture.mode)
@@ -38,6 +40,30 @@ class Game:
             self.cells.append([])
             for j in range(self.width // self.res):
                 self.cells[i].append(Cell(i, j))
+        self.current = self.cells[0][0]
+
+    def valid(self, x, y):
+        if x >= 0 and x < (self.width // self.res)-1 and y >= 0 and y < (self.height // self.res)-1:
+            # return self.cells[x][y].openings == [False, False, False, False]
+            return True
+
+    def get_neighbors(self, x, y):
+        neighbours = []
+        if self.valid(x, y - 1):
+            neighbours.append(self.cells[y - 1][x])
+        if self.valid(x + 1, y):
+            neighbours.append(self.cells[y][x + 1])
+        if self.valid(x, y + 1):
+            neighbours.append(self.cells[y + 1][x])
+        if self.valid(x - 1, y):
+            neighbours.append(self.cells[y][x - 1])
+        
+        return neighbours if len(neighbours) > 0 else None
+    
+    def walk(self):
+        new = self.get_neighbors(self.current.x, self.current.y)
+        if new:
+            self.current = random.choice(new)
 
     def run(self):
         while self.running:
@@ -48,8 +74,15 @@ class Game:
                     if event.key == pygame.K_r:
                         self.regenerate()
 
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_SPACE]:
+                self.walk()
+
             self.render = Image.new('RGB', (self.width, self.height), (255, 255, 255, 0))
-            
+            self.screen.fill((255, 255, 255))
+
+            self.cells[self.current.y][self.current.x].openings = [True, True, True, True]
+
             for y, row in enumerate(self.cells):
                 for x, cell in enumerate(row):
                     openings = ""
@@ -59,9 +92,17 @@ class Game:
                     openings += "l" if cell.openings[3] else ""
                     openings = "b" if openings == "urdl" else openings
                     openings = "a" if openings == "" else openings
-                    self.render.paste(self.tiles[openings], (x * self.res, y * self.res))
-            self.screen.blit(self.get_surface(self.render), (0, 0))
-
+                    if self.scene == "grid":
+                        self.render.paste(self.tiles[openings], (x * self.res, y * self.res))
+                        self.screen.blit(self.get_surface(self.render), (0, 0))
+                    else:
+                        if openings!="a":
+                            pygame.draw.circle(self.screen, (0, 0, 0, 10), (x * self.res + self.res // 2, y * self.res + self.res // 2), self.res // 3)
+            pygame.draw.circle(self.screen, (255, 0, 0), ((self.current.x * self.res) + self.res // 2, (self.current.y * self.res) + self.res // 2), self.res // 3)
+            n = self.get_neighbors(self.current.x, self.current.y)
+            if n:
+                for cell in n:
+                    pygame.draw.circle(self.screen, (0, 255, 0), (cell.x * self.res + self.res // 2, cell.y * self.res + self.res // 2), self.res // 3)
             self.clock.tick(60)
             pygame.display.update()
 
