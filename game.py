@@ -8,10 +8,15 @@ class Cell:
         self.x = x
         self.y = y
         self.openings = [False, False, False, False]
+        self.tried = False
+
+    def reset(self):
+        self.openings = [False, False, False, False]
+        self.tried = False
 
 class Game:
     def __init__(self):
-        self.screen = pygame.display.set_mode((640, 480))
+        self.screen = pygame.display.set_mode((600, 400))
         self.height = self.screen.get_height()
         self.width = self.screen.get_width()
         self.render = Image.new('RGB', (self.width, self.height), (255, 255, 255, 0))
@@ -19,54 +24,70 @@ class Game:
         self.clock = pygame.time.Clock()
         self.running = True
 
-        self.res = 20
-        self.cells = []
+        self.res = 100
+        self.cells = [[Cell(x, y) for x in range(self.width // self.res)] for y in range(self.height // self.res)]
         self.scene = "walk"
 
         self.tiles = generate()
 
-        for i in range(self.height // self.res):
-            self.cells.append([])
-            for j in range(self.width // self.res):
-                self.cells[i].append(Cell(j, i))
         self.current = self.cells[0][0]
+        self.current.tried = True
         self.path = [self.current]
     
     def get_surface(self, texture: Image):
         return pygame.image.fromstring(texture.tobytes(), texture.size, texture.mode)
 
     def regenerate(self):
-        self.cells = []
-        for i in range(self.height // self.res):
-            self.cells.append([])
-            for j in range(self.width // self.res):
-                self.cells[i].append(Cell(j, i))
+        self.cells = [[Cell(x, y) for x in range(self.width // self.res)] for y in range(self.height // self.res)]
         self.current = self.cells[0][0]
         self.path = [self.current]
 
     def valid(self, x, y):
-        if x >= 0 and x < (self.width // self.res)-1 and y >= 0 and y < (self.height // self.res)-1:
-            return self.cells[y][x].openings == [False, False, False, False]
-            # return True
+        if x >= 0 and x <= (self.width // self.res)-1 and y >= 0 and y <= (self.height // self.res)-1:
+            return not self.cells[y][x].tried
 
     def get_neighbors(self, x, y):
         neighbours = []
-        if self.valid(x, y - 1):
+        s = self.cells[y][x]
+        if self.valid(x, y - 1) and not s.openings[2]:
             neighbours.append(self.cells[y - 1][x])
-        if self.valid(x + 1, y):
+        if self.valid(x + 1, y) and not s.openings[3]:
             neighbours.append(self.cells[y][x + 1])
-        if self.valid(x, y + 1):
+        if self.valid(x, y + 1) and not s.openings[0]:
             neighbours.append(self.cells[y + 1][x])
-        if self.valid(x - 1, y):
+        if self.valid(x - 1, y) and not s.openings[1]:
             neighbours.append(self.cells[y][x - 1])
         
         return neighbours if len(neighbours) > 0 else None
+
+    def open_way(self, old, new):
+        x = new.x - old.x
+        y = new.y - old.y
+        if x == 1:
+            old.openings[3] = True
+            new.openings[1] = True
+        elif x == -1:
+            old.openings[1] = True
+            new.openings[3] = True
+        elif y == 1:
+            old.openings[0] = True
+            new.openings[2] = True
+        elif y == -1:
+            old.openings[2] = True
+            new.openings[0] = True
     
     def walk(self):
         new = self.get_neighbors(self.current.x, self.current.y)
         if new:
+            old = self.current
             self.current = random.choice(new)
+            self.open_way(old, self.current)
             self.path.append(self.current)
+            self.current.tried = True
+        elif len(self.path) > 1:
+            stuck = self.path.pop()
+            stuck.reset()
+            self.current = self.path[-1]
 
     def run(self):
         while self.running:
@@ -81,9 +102,9 @@ class Game:
             self.render = Image.new('RGB', (self.width, self.height), (255, 255, 255, 0))
             self.screen.fill((255, 255, 255))
 
-            self.cells[self.current.y][self.current.x].openings = [True, True, True, True]
-
-            self.walk()
+            if len(self.path) < (self.width // self.res) * (self.height // self.res):
+                if self.scene == "walk":
+                    self.walk()
 
             for y, row in enumerate(self.cells):
                 for x, cell in enumerate(row):
@@ -101,6 +122,7 @@ class Game:
             for index, cell in enumerate(self.path):
                 if index > 0:
                     pygame.draw.line(self.screen, (0, 0, 0), (self.path[index-1].x * self.res + self.res // 2, self.path[index-1].y * self.res + self.res // 2), (cell.x * self.res + self.res // 2, cell.y * self.res + self.res // 2), self.res // 4)
+                pygame.draw.circle(self.screen, (0, 0, 0), (cell.x * self.res + self.res // 2, cell.y * self.res + self.res // 2), self.res // 8)
 
             pygame.draw.circle(self.screen, (0, 0, 0), ((self.current.x * self.res) + self.res // 2, (self.current.y * self.res) + self.res // 2), self.res // 3)
 
