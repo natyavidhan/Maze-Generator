@@ -97,17 +97,13 @@ class Game:
                     if self.scene == "grid":
                         self.render.paste(self.tiles[openings], (x * self.res, y * self.res))
                         self.screen.blit(self.get_surface(self.render), (0, 0))
-                    else:
-                        if openings!="a":
-                            pygame.draw.circle(self.screen, (0, 0, 0, 10), (x * self.res + self.res // 2, y * self.res + self.res // 2), self.res // 3)
+
             for index, cell in enumerate(self.path):
                 if index > 0:
-                    pygame.draw.line(self.screen, (0, 0, 0), (self.path[index-1].x * self.res + self.res // 2, self.path[index-1].y * self.res + self.res // 2), (cell.x * self.res + self.res // 2, cell.y * self.res + self.res // 2), 2)
-            pygame.draw.circle(self.screen, (255, 0, 0), ((self.current.x * self.res) + self.res // 2, (self.current.y * self.res) + self.res // 2), self.res // 3)
-            n = self.get_neighbors(self.current.x, self.current.y)
-            if n:
-                for cell in n:
-                    pygame.draw.circle(self.screen, (0, 255, 0), (cell.x * self.res + self.res // 2, cell.y * self.res + self.res // 2), self.res // 3)
+                    pygame.draw.line(self.screen, (0, 0, 0), (self.path[index-1].x * self.res + self.res // 2, self.path[index-1].y * self.res + self.res // 2), (cell.x * self.res + self.res // 2, cell.y * self.res + self.res // 2), self.res // 4)
+
+            pygame.draw.circle(self.screen, (0, 0, 0), ((self.current.x * self.res) + self.res // 2, (self.current.y * self.res) + self.res // 2), self.res // 3)
+
             self.clock.tick(60)
             pygame.display.update()
 
