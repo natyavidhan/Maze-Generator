@@ -73,21 +73,37 @@ class Game:
         
         return neighbours if len(neighbours) > 0 else None
 
+    def change(self, old, new, a, b):
+        old.openings[a] = True
+        new.openings[b] = True
+
     def open_way(self, old, new):
         x = new.x - old.x
         y = new.y - old.y
         if x == 1:
-            old.openings[1] = True
-            new.openings[3] = True
+            self.change(old, new, 1, 3)
         elif x == -1:
-            old.openings[3] = True
-            new.openings[1] = True
+            self.change(old, new, 3, 1)
         elif y == 1:
-            old.openings[2] = True
-            new.openings[0] = True
+            self.change(old, new, 2, 0)
         elif y == -1:
-            old.openings[0] = True
-            new.openings[2] = True
+            self.change(old, new, 0, 2)
+
+    def uniform(self):
+        old_path = self.path
+        self.path = []
+        for cell in old_path:
+            cell.reset()
+            self.path.append(cell)
+
+        old = old_path[0]
+        for i in range(1, len(old_path)):
+            new = old_path[i]
+            self.open_way(old, new)
+            old = new
+            self.path.append(new)
+            
+
     
     def walk(self):
         new = self.get_neighbors(self.current.x, self.current.y)
@@ -136,6 +152,7 @@ class Game:
             else:
                 if self.end_time is None:
                     self.end_time = time.time()
+                    self.uniform()
                     self.scene = "grid"
 
             if self.scene == "grid":
@@ -143,13 +160,26 @@ class Game:
                     ox, oy = cell.x * self.res, cell.y * self.res
                     pygame.draw.rect(self.screen, (0, 0, 0), (ox, oy, self.res, self.res), 5)
                     if cell.openings[0]:
-                        pygame.draw.line(self.screen, (255, 255, 255), (ox+5, oy+2.5), (ox+(self.res-5), oy+2.5), 5)
+                        pygame.draw.line(self.screen, (255, 255, 255), (ox+5, oy+2.5), (ox+(self.res-6), oy+2.5), 5)
                     if cell.openings[1]:
-                        pygame.draw.line(self.screen, (255, 255, 255), ((ox+self.res)-2.5, oy+5), ((ox+self.res)-2.5, oy+(self.res-5)), 5)
+                        pygame.draw.line(self.screen, (255, 255, 255), ((ox+self.res)-2.5, oy+5), ((ox+self.res)-2.5, oy+(self.res-6)), 5)
                     if cell.openings[2]:
-                        pygame.draw.line(self.screen, (255, 255, 255), (ox+5, (oy+self.res)-2.5), (ox+(self.res-5), (oy+self.res)-2.5), 5)
+                        pygame.draw.line(self.screen, (255, 255, 255), (ox+5, (oy+self.res)-2.5), (ox+(self.res-6), (oy+self.res)-2.5), 5)
                     if cell.openings[3]:
-                        pygame.draw.line(self.screen, (255, 255, 255), (ox+2.5, oy+5), (ox+2.5, oy+(self.res-5)), 5)
+                        pygame.draw.line(self.screen, (255, 255, 255), (ox+2.5, oy+5), (ox+2.5, oy+(self.res-6)), 5)
+                font = pygame.font.SysFont('Consolas', 20)
+                #start point
+                text = font.render(f'Start', True, (0, 0, 0))
+                r = text.get_rect()
+                r.center = (self.path[0].x * self.res + self.res/2, self.path[0].y * self.res + self.res/2)
+                self.screen.blit(text, r)
+
+                #end point
+                text = font.render(f'End', True, (0, 0, 0))
+                r = text.get_rect()
+                r.center = (self.path[-1].x * self.res + self.res/2, self.path[-1].y * self.res + self.res/2)
+                self.screen.blit(text, r)
+
 
             elif self.scene == "walk":
                 for index, cell in enumerate(self.path):
