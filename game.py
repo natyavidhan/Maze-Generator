@@ -21,6 +21,7 @@ class Game:
 
         self.res = 20
         self.cells = []
+        self.path = []
         self.scene = "walk"
 
         self.tiles = generate()
@@ -39,13 +40,14 @@ class Game:
         for i in range(self.height // self.res):
             self.cells.append([])
             for j in range(self.width // self.res):
-                self.cells[i].append(Cell(i, j))
+                self.cells[i].append(Cell(j, i))
         self.current = self.cells[0][0]
+        self.path = []
 
     def valid(self, x, y):
         if x >= 0 and x < (self.width // self.res)-1 and y >= 0 and y < (self.height // self.res)-1:
-            # return self.cells[x][y].openings == [False, False, False, False]
-            return True
+            return self.cells[y][x].openings == [False, False, False, False]
+            # return True
 
     def get_neighbors(self, x, y):
         neighbours = []
