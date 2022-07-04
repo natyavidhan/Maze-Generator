@@ -3,6 +3,7 @@ from PIL import Image
 import random
 from tiles import generate
 import time
+from tkinter import filedialog
 
 pygame.init()
 pygame.font.init()
@@ -23,7 +24,7 @@ class Game:
         self.screen = pygame.display.set_mode((600, 500))
         self.height = self.screen.get_height()-100
         self.width = self.screen.get_width()
-        self.render = Image.new('RGB', (self.width, self.height), (255, 255, 255, 0))
+        self.render = pygame.Surface((self.width, self.height))
         self.ui = pygame.Surface((600, 100))
 
         self.clock = pygame.time.Clock()
@@ -31,8 +32,9 @@ class Game:
         self.start_time = time.time()
         self.end_time = None
         self.total_steps = 0
+        self.exported = [False, False]
 
-        self.res = 50
+        self.res = 100
         self.cells = [[Cell(x, y) for x in range(self.width // self.res)] for y in range(self.height // self.res)]
         self.scene = "walk"
 
@@ -118,6 +120,13 @@ class Game:
             stuck.reset()
             self.current = self.path[-1]
         self.total_steps += 1
+    
+    def export(self):
+        folder = filedialog.askdirectory()
+        if folder:
+            raw_img = pygame.image.tostring(self.render, "RGB")
+            img = Image.frombytes("RGB", (self.width, self.height), raw_img)
+            img.save(folder + "/" + str(time.time()) + ".png")
 
     def render_ui(self):
         self.ui.fill((255, 255, 255))
@@ -143,7 +152,7 @@ class Game:
                         self.regenerate()
 
 
-            self.render = Image.new('RGB', (self.width, self.height), (255, 255, 255, 0))
+            self.render.fill((255, 255, 255))
             self.screen.fill((255, 255, 255))
 
             if len(self.path) < (self.width // self.res) * (self.height // self.res):
@@ -158,29 +167,35 @@ class Game:
             if self.scene == "grid":
                 for cell in self.path:
                     ox, oy = cell.x * self.res, cell.y * self.res
-                    pygame.draw.rect(self.screen, (0, 0, 0), (ox, oy, self.res, self.res), 5)
+                    pygame.draw.rect(self.render, (0, 0, 0), (ox, oy, self.res, self.res), 5)
                     if cell.openings[0]:
-                        pygame.draw.line(self.screen, (255, 255, 255), (ox+5, oy+2.5), (ox+(self.res-6), oy+2.5), 5)
+                        pygame.draw.line(self.render, (255, 255, 255), (ox+5, oy+2.5), (ox+(self.res-6), oy+2.5), 5)
                     if cell.openings[1]:
-                        pygame.draw.line(self.screen, (255, 255, 255), ((ox+self.res)-2.5, oy+5), ((ox+self.res)-2.5, oy+(self.res-6)), 5)
+                        pygame.draw.line(self.render, (255, 255, 255), ((ox+self.res)-2.5, oy+5), ((ox+self.res)-2.5, oy+(self.res-6)), 5)
                     if cell.openings[2]:
-                        pygame.draw.line(self.screen, (255, 255, 255), (ox+5, (oy+self.res)-2.5), (ox+(self.res-6), (oy+self.res)-2.5), 5)
+                        pygame.draw.line(self.render, (255, 255, 255), (ox+5, (oy+self.res)-2.5), (ox+(self.res-6), (oy+self.res)-2.5), 5)
                     if cell.openings[3]:
-                        pygame.draw.line(self.screen, (255, 255, 255), (ox+2.5, oy+5), (ox+2.5, oy+(self.res-6)), 5)
+                        pygame.draw.line(self.render, (255, 255, 255), (ox+2.5, oy+5), (ox+2.5, oy+(self.res-6)), 5)
                 font = pygame.font.SysFont('Consolas', 20)
                 #start point
-                pygame.draw.rect(self.screen, (0, 255, 0), ((self.path[0].x * self.res)+5, (self.path[0].y * self.res)+5, self.res-10, self.res-10))
+                pygame.draw.rect(self.render, (0, 255, 0), ((self.path[0].x * self.res)+5, (self.path[0].y * self.res)+5, self.res-10, self.res-10))
                 text = font.render(f'Start', True, (0, 0, 0))
                 r = text.get_rect()
                 r.center = (self.path[0].x * self.res + self.res/2, self.path[0].y * self.res + self.res/2)
-                self.screen.blit(text, r)
+                self.render.blit(text, r)
 
                 #end point
-                pygame.draw.rect(self.screen, (255, 0, 0), ((self.path[-1].x * self.res)+5, (self.path[-1].y * self.res)+5, self.res-10, self.res-10))
+                pygame.draw.rect(self.render, (255, 0, 0), ((self.path[-1].x * self.res)+5, (self.path[-1].y * self.res)+5, self.res-10, self.res-10))
                 text = font.render(f'End', True, (0, 0, 0))
                 r = text.get_rect()
                 r.center = (self.path[-1].x * self.res + self.res/2, self.path[-1].y * self.res + self.res/2)
-                self.screen.blit(text, r)
+                self.render.blit(text, r)
+                self.screen.blit(self.render, (0, 0))
+                if not self.exported[0]:
+                    self.exported[0] = True
+                elif not self.exported[1]:
+                    self.exported[1] = True
+                    self.export()
 
 
             elif self.scene == "walk":
