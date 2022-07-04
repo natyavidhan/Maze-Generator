@@ -32,7 +32,7 @@ class Game:
         self.end_time = None
         self.total_steps = 0
 
-        self.res = 100
+        self.res = 50
         self.cells = [[Cell(x, y) for x in range(self.width // self.res)] for y in range(self.height // self.res)]
         self.scene = "walk"
 
@@ -169,12 +169,14 @@ class Game:
                         pygame.draw.line(self.screen, (255, 255, 255), (ox+2.5, oy+5), (ox+2.5, oy+(self.res-6)), 5)
                 font = pygame.font.SysFont('Consolas', 20)
                 #start point
+                pygame.draw.rect(self.screen, (0, 255, 0), ((self.path[0].x * self.res)+5, (self.path[0].y * self.res)+5, self.res-10, self.res-10))
                 text = font.render(f'Start', True, (0, 0, 0))
                 r = text.get_rect()
                 r.center = (self.path[0].x * self.res + self.res/2, self.path[0].y * self.res + self.res/2)
                 self.screen.blit(text, r)
 
                 #end point
+                pygame.draw.rect(self.screen, (255, 0, 0), ((self.path[-1].x * self.res)+5, (self.path[-1].y * self.res)+5, self.res-10, self.res-10))
                 text = font.render(f'End', True, (0, 0, 0))
                 r = text.get_rect()
                 r.center = (self.path[-1].x * self.res + self.res/2, self.path[-1].y * self.res + self.res/2)
@@ -185,7 +187,9 @@ class Game:
                 for index, cell in enumerate(self.path):
                     if index > 0:
                         pygame.draw.line(self.screen, (0, 0, 0), (self.path[index-1].x * self.res + self.res // 2, self.path[index-1].y * self.res + self.res // 2), (cell.x * self.res + self.res // 2, cell.y * self.res + self.res // 2), self.res // 4)
-                    pygame.draw.circle(self.screen, (0, 0, 0), (cell.x * self.res + self.res // 2, cell.y * self.res + self.res // 2), self.res // 8)
+                        r = pygame.Rect(cell.x * self.res, cell.y * self.res, self.res//4, self.res//4)
+                        r.center = ((cell.x * self.res + self.res // 2), (cell.y * self.res + self.res // 2))
+                        pygame.draw.rect(self.screen, (0, 0, 0), r)
 
                 pygame.draw.circle(self.screen, (0, 0, 0), ((self.current.x * self.res) + self.res // 2, (self.current.y * self.res) + self.res // 2), self.res // 4)
 
