@@ -2,6 +2,10 @@ import pygame
 from PIL import Image
 import random
 from tiles import generate
+import time
+
+pygame.init()
+pygame.font.init()
 
 class Cell:
     def __init__(self, x, y):
@@ -16,13 +20,16 @@ class Cell:
 
 class Game:
     def __init__(self):
-        self.screen = pygame.display.set_mode((600, 400))
-        self.height = self.screen.get_height()
+        self.screen = pygame.display.set_mode((600, 500))
+        self.height = self.screen.get_height()-100
         self.width = self.screen.get_width()
         self.render = Image.new('RGB', (self.width, self.height), (255, 255, 255, 0))
+        self.ui = pygame.Surface((600, 100))
 
         self.clock = pygame.time.Clock()
         self.running = True
+        self.start_time = time.time()
+        self.end_time = None
 
         self.res = 100
         self.cells = [[Cell(x, y) for x in range(self.width // self.res)] for y in range(self.height // self.res)]
@@ -41,6 +48,10 @@ class Game:
         self.cells = [[Cell(x, y) for x in range(self.width // self.res)] for y in range(self.height // self.res)]
         self.current = self.cells[0][0]
         self.path = [self.current]
+        self.current.tried = True
+        self.scene = "walk"
+        self.start_time = time.time()
+        self.end_time = None
 
     def valid(self, x, y):
         if x >= 0 and x <= (self.width // self.res)-1 and y >= 0 and y <= (self.height // self.res)-1:
@@ -89,6 +100,19 @@ class Game:
             stuck.reset()
             self.current = self.path[-1]
 
+    def render_ui(self):
+        self.ui.fill((255, 255, 255))
+        pygame.draw.rect(self.ui, (0, 0, 0), (0, 0, 600, 100), 5)
+        font = pygame.font.SysFont('Consolas', 20)
+
+        self.ui.blit(font.render(f'Length of Path: {len(self.path)}', True, (0, 0, 0)), (10, 10))
+        self.ui.blit(font.render(f'Current Process: {self.scene}', True, (0, 0, 0)), (10, 35))
+        total_time = self.end_time if self.end_time else time.time() 
+        total_time -= self.start_time
+        self.ui.blit(font.render(f'Time Spent: {round(total_time, 2)}', True, (0, 0, 0)), (10, 60))
+
+        self.screen.blit(self.ui, (0, 400))
+
     def run(self):
         while self.running:
             for event in pygame.event.get():
@@ -105,6 +129,9 @@ class Game:
             if len(self.path) < (self.width // self.res) * (self.height // self.res):
                 if self.scene == "walk":
                     self.walk()
+            else:
+                if self.end_time is None:
+                    self.end_time = time.time()
 
             for y, row in enumerate(self.cells):
                 for x, cell in enumerate(row):
@@ -124,7 +151,9 @@ class Game:
                     pygame.draw.line(self.screen, (0, 0, 0), (self.path[index-1].x * self.res + self.res // 2, self.path[index-1].y * self.res + self.res // 2), (cell.x * self.res + self.res // 2, cell.y * self.res + self.res // 2), self.res // 4)
                 pygame.draw.circle(self.screen, (0, 0, 0), (cell.x * self.res + self.res // 2, cell.y * self.res + self.res // 2), self.res // 8)
 
-            pygame.draw.circle(self.screen, (0, 0, 0), ((self.current.x * self.res) + self.res // 2, (self.current.y * self.res) + self.res // 2), self.res // 3)
+            pygame.draw.circle(self.screen, (0, 0, 0), ((self.current.x * self.res) + self.res // 2, (self.current.y * self.res) + self.res // 2), self.res // 4)
+
+            self.render_ui()
 
             self.clock.tick(60)
             pygame.display.update()
