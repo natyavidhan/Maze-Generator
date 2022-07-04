@@ -27,4 +27,5 @@ def generate():
         if 'a' in i:
             img.paste(Image.new('RGB', (64, 64), (255, 255, 255, 0)), (0, 0))
         tiles[i] = img
+        
     return tiles

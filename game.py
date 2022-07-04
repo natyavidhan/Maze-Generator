@@ -30,6 +30,7 @@ class Game:
         self.running = True
         self.start_time = time.time()
         self.end_time = None
+        self.total_steps = 0
 
         self.res = 100
         self.cells = [[Cell(x, y) for x in range(self.width // self.res)] for y in range(self.height // self.res)]
@@ -52,6 +53,7 @@ class Game:
         self.scene = "walk"
         self.start_time = time.time()
         self.end_time = None
+        self.total_steps = 0
 
     def valid(self, x, y):
         if x >= 0 and x <= (self.width // self.res)-1 and y >= 0 and y <= (self.height // self.res)-1:
@@ -60,13 +62,13 @@ class Game:
     def get_neighbors(self, x, y):
         neighbours = []
         s = self.cells[y][x]
-        if self.valid(x, y - 1) and not s.openings[2]:
+        if self.valid(x, y - 1) and not s.openings[0]:
             neighbours.append(self.cells[y - 1][x])
-        if self.valid(x + 1, y) and not s.openings[3]:
+        if self.valid(x + 1, y) and not s.openings[1]:
             neighbours.append(self.cells[y][x + 1])
-        if self.valid(x, y + 1) and not s.openings[0]:
+        if self.valid(x, y + 1) and not s.openings[2]:
             neighbours.append(self.cells[y + 1][x])
-        if self.valid(x - 1, y) and not s.openings[1]:
+        if self.valid(x - 1, y) and not s.openings[3]:
             neighbours.append(self.cells[y][x - 1])
         
         return neighbours if len(neighbours) > 0 else None
@@ -75,17 +77,17 @@ class Game:
         x = new.x - old.x
         y = new.y - old.y
         if x == 1:
-            old.openings[3] = True
-            new.openings[1] = True
-        elif x == -1:
             old.openings[1] = True
             new.openings[3] = True
+        elif x == -1:
+            old.openings[3] = True
+            new.openings[1] = True
         elif y == 1:
-            old.openings[0] = True
-            new.openings[2] = True
-        elif y == -1:
             old.openings[2] = True
             new.openings[0] = True
+        elif y == -1:
+            old.openings[0] = True
+            new.openings[2] = True
     
     def walk(self):
         new = self.get_neighbors(self.current.x, self.current.y)
@@ -99,17 +101,19 @@ class Game:
             stuck = self.path.pop()
             stuck.reset()
             self.current = self.path[-1]
+        self.total_steps += 1
 
     def render_ui(self):
         self.ui.fill((255, 255, 255))
         pygame.draw.rect(self.ui, (0, 0, 0), (0, 0, 600, 100), 5)
         font = pygame.font.SysFont('Consolas', 20)
+        total_time = self.end_time if self.end_time else time.time() 
+        total_time -= self.start_time
 
         self.ui.blit(font.render(f'Length of Path: {len(self.path)}', True, (0, 0, 0)), (10, 10))
         self.ui.blit(font.render(f'Current Process: {self.scene}', True, (0, 0, 0)), (10, 35))
-        total_time = self.end_time if self.end_time else time.time() 
-        total_time -= self.start_time
         self.ui.blit(font.render(f'Time Spent: {round(total_time, 2)}', True, (0, 0, 0)), (10, 60))
+        self.ui.blit(font.render(f'Total Steps: {self.total_steps}', True, (0, 0, 0)), (275, 10))
 
         self.screen.blit(self.ui, (0, 400))
 
@@ -132,26 +136,28 @@ class Game:
             else:
                 if self.end_time is None:
                     self.end_time = time.time()
+                    self.scene = "grid"
 
-            for y, row in enumerate(self.cells):
-                for x, cell in enumerate(row):
-                    openings = ""
-                    openings += "u" if cell.openings[0] else ""
-                    openings += "r" if cell.openings[1] else ""
-                    openings += "d" if cell.openings[2] else ""
-                    openings += "l" if cell.openings[3] else ""
-                    openings = "b" if openings == "urdl" else openings
-                    openings = "a" if openings == "" else openings
-                    if self.scene == "grid":
-                        self.render.paste(self.tiles[openings], (x * self.res, y * self.res))
-                        self.screen.blit(self.get_surface(self.render), (0, 0))
+            if self.scene == "grid":
+                for cell in self.path:
+                    ox, oy = cell.x * self.res, cell.y * self.res
+                    pygame.draw.rect(self.screen, (0, 0, 0), (ox, oy, self.res, self.res), 5)
+                    if cell.openings[0]:
+                        pygame.draw.line(self.screen, (255, 255, 255), (ox+5, oy+2.5), (ox+(self.res-5), oy+2.5), 5)
+                    if cell.openings[1]:
+                        pygame.draw.line(self.screen, (255, 255, 255), ((ox+self.res)-2.5, oy+5), ((ox+self.res)-2.5, oy+(self.res-5)), 5)
+                    if cell.openings[2]:
+                        pygame.draw.line(self.screen, (255, 255, 255), (ox+5, (oy+self.res)-2.5), (ox+(self.res-5), (oy+self.res)-2.5), 5)
+                    if cell.openings[3]:
+                        pygame.draw.line(self.screen, (255, 255, 255), (ox+2.5, oy+5), (ox+2.5, oy+(self.res-5)), 5)
 
-            for index, cell in enumerate(self.path):
-                if index > 0:
-                    pygame.draw.line(self.screen, (0, 0, 0), (self.path[index-1].x * self.res + self.res // 2, self.path[index-1].y * self.res + self.res // 2), (cell.x * self.res + self.res // 2, cell.y * self.res + self.res // 2), self.res // 4)
-                pygame.draw.circle(self.screen, (0, 0, 0), (cell.x * self.res + self.res // 2, cell.y * self.res + self.res // 2), self.res // 8)
+            elif self.scene == "walk":
+                for index, cell in enumerate(self.path):
+                    if index > 0:
+                        pygame.draw.line(self.screen, (0, 0, 0), (self.path[index-1].x * self.res + self.res // 2, self.path[index-1].y * self.res + self.res // 2), (cell.x * self.res + self.res // 2, cell.y * self.res + self.res // 2), self.res // 4)
+                    pygame.draw.circle(self.screen, (0, 0, 0), (cell.x * self.res + self.res // 2, cell.y * self.res + self.res // 2), self.res // 8)
 
-            pygame.draw.circle(self.screen, (0, 0, 0), ((self.current.x * self.res) + self.res // 2, (self.current.y * self.res) + self.res // 2), self.res // 4)
+                pygame.draw.circle(self.screen, (0, 0, 0), ((self.current.x * self.res) + self.res // 2, (self.current.y * self.res) + self.res // 2), self.res // 4)
 
             self.render_ui()
 
