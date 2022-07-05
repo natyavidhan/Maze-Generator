@@ -22,6 +22,7 @@ class Cell:
 class Game:
     def __init__(self):
         self.screen = pygame.display.set_mode((600, 500))
+        pygame.display.set_caption("Maze Generator")
         self.height = self.screen.get_height()-100
         self.width = self.screen.get_width()
         self.render = pygame.Surface((self.width, self.height))
@@ -56,6 +57,7 @@ class Game:
         self.start_time = time.time()
         self.end_time = None
         self.total_steps = 0
+        self.exported = [False, False]
 
     def valid(self, x, y):
         if x >= 0 and x <= (self.width // self.res)-1 and y >= 0 and y <= (self.height // self.res)-1:
